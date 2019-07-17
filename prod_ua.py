@@ -1,21 +1,36 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[1]:
-
-
 import pandas as pd
 import os
 import re
-from numpy import nan
+import requests
+from rarfile import RarFile
+from urllib.request import urlretrieve
+from bs4 import BeautifulSoup
+pd.options.mode.chained_assignment = None
 
+url = 'http://utg.ua/wp-content/uploads/cdd/ARCHIVE/PROD/UA/'
+dir_raw = 'prod_ua_raw'
+link_pattern = 'rod_'
+rar_file = 'prod_ua.rar'
+title_str = 'utg_prod_ua'
 
-# In[3]:
+# Download files
+content = BeautifulSoup(requests.get(url).text)
+files = [link.get('href') for link in content.find_all('a') if link_pattern in link.get('href')]
+if not os.path.exists(dir_raw):
+    os.makedirs(dir_raw)
+for file in files:
+    urlretrieve(url + file, os.path.join(dir_raw, file))
+    print('file ' + file + ' retrieved')
 
+# unrar
+rar_content_names = RarFile(os.path.join(dir_raw, rar_file)).namelist()
+RarFile(os.path.join(dir_raw, rar_file)).extractall(dir_raw)
+os.remove(os.path.join(dir_raw, rar_file))
 
-# Функція отримання даних про видобуток газу з одного файлу (за один день)
-# Вимагає завантаження розпакованих файлів Укртрансгазу (архів prod_ua.rar тут: http://utg.ua/wp-content/uploads/cdd/ARCHIVE/PROD/UA/)
-# у папку prod_ua_raw, що знаходиться одній папці зі скриптом
+# function processing a separate dataset
 
 def get_gas_data(file):
     print(file)
@@ -32,48 +47,31 @@ def get_gas_data(file):
     df_comp = df[~df['company'].str.contains('сього')]
     return (df_total, df_comp)
 
-
-# In[4]:
-
-
-# Закачка даних всіх файлів у спільний список
+# joining files into a list
 files = os.listdir('prod_ua_raw')
 all_dfs = list(map(get_gas_data, files))
 
-
-# In[15]:
-
-
-# Об'єднання в таблиці: окремо для щоденних імпортованих сум і для даних за компаніями
+# creating and processing full datasets: daily data and totals
 all_dfs_total = pd.concat([df[0] for df in all_dfs]).sort_values('date')
 all_dfs_comp = pd.concat([df[1] for df in all_dfs])
 all_dfs_comp['company'] = all_dfs_comp['company'].astype('category')
 all_dfs_comp['company'].cat.reorder_categories(['Укргазвидобування', 'Укрнафта', 'Інші'], inplace = True)
 all_dfs_comp = all_dfs_comp.sort_values(['date', 'company'])
 
-
-# In[31]:
-
-
-# Запис файлів у форматах .csv та .xlsx
+# writing into .csv та .xlsx
 
 if not os.path.exists("output"):
     os.makedirs("output")
 
 strdate = all_dfs_comp['date'].iloc[-1].strftime("%y%m%d")        
 
-all_dfs_total.to_csv(os.path.join('output', 'ukrtransgas_daily_totals_'+strdate+'.csv'), encoding = 'utf-8', index = False)
-all_dfs_total.to_excel(os.path.join('output','ukrtransgas_daily_totals_'+strdate+'.xlsx'), encoding = 'utf-8', index = False)
-all_dfs_comp.to_csv(os.path.join('output', 'ukrtransgas_daily_'+strdate+'.csv'), encoding = 'utf-8', index = False)
-all_dfs_comp.to_excel(os.path.join('output','ukrtransgas_daily_'+strdate+'.xlsx'), encoding = 'utf-8', index = False)
+all_dfs_total.to_csv(os.path.join('output', title_str+'_totals_'+strdate+'.csv'), encoding = 'utf-8', index = False)
+all_dfs_total.to_excel(os.path.join('output', title_str+'_totals_'+strdate+'.xlsx'), encoding = 'utf-8', index = False)
+all_dfs_comp.to_csv(os.path.join('output', title_str+'_daily_'+strdate+'.csv'), encoding = 'utf-8', index = False)
+all_dfs_comp.to_excel(os.path.join('output', title_str+'_daily_'+strdate+'.xlsx'), encoding = 'utf-8', index = False)
 
+# check sums & write into .xlsx
 
-# In[32]:
-
-
-# Перевірка збігу щоденних сум з файлу за компаніями та щоденних сум, вказаних у таблицях Укртрансгазу (запис у файл  Excel)
 grouped_sums = all_dfs_comp.groupby('date')['production_tsd_m3'].agg('sum').round(3).to_frame(name = 'grouped_sum').reset_index()
 compare_sums = pd.merge(grouped_sums, all_dfs_total, on = 'date', how = 'outer')
-print(compare_sums.head(20))
-compare_sums.to_excel(os.path.join('output',"ukrtransgas_daily_compare_sums.xlsx"), encoding = 'utf-8', index = False)
-
+compare_sums.to_excel(os.path.join('output', title_str+'_compare_sums.xlsx'), encoding = 'utf-8', index = False)
