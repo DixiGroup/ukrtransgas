@@ -8,6 +8,7 @@ import requests
 from rarfile import RarFile
 from urllib.request import urlretrieve
 from bs4 import BeautifulSoup
+from time import sleep
 pd.options.mode.chained_assignment = None
 
 url = 'http://utg.ua/wp-content/uploads/cdd/ARCHIVE/PROD/UA/'
@@ -24,6 +25,7 @@ if not os.path.exists(dir_raw):
 for file in files:
     urlretrieve(url + file, os.path.join(dir_raw, file))
     print('file ' + file + ' retrieved')
+    sleep(1)
 
 # unrar
 rar_content_names = RarFile(os.path.join(dir_raw, rar_file)).namelist()

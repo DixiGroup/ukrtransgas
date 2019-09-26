@@ -13,11 +13,11 @@ from bs4 import BeautifulSoup
 from time import sleep
 pd.options.mode.chained_assignment = None
 
-url = 'http://utg.ua/wp-content/uploads/cdd/ARCHIVE/INFLOW_EU/UA/'
-dir_raw = 'inflow_eu_ua_raw'
+url = 'http://utg.ua/wp-content/uploads/cdd/ARCHIVE/INFLOW_EU/EN/'
+dir_raw = 'inflow_eu_ua_en_raw'
 start_pattern = 'Inflow'
-rar_file = 'Inflow_eu_ua.rar'
-title_str = 'utg_inflow_eu'
+rar_file = 'Inflow_eu_en.rar'
+title_str = 'utg_inflow_eu_en'
 
 # Download files
 content = BeautifulSoup(requests.get(url).text)
@@ -38,7 +38,7 @@ os.remove(os.path.join(dir_raw, rar_file))
 
 def get_gas_data(file):
     print(file)
-    df_raw = pd.read_excel(os.path.join('inflow_eu_ua_raw', file)).iloc[1:,1:3]
+    df_raw = pd.read_excel(os.path.join(dir_raw, file)).iloc[2:,1:3]
     df_raw.columns = ['station', 'import_tsd_m3']
     title = [item for item in df_raw['station'] if pd.notna(item)][0]
     df = df_raw.loc[pd.notnull(df_raw.station)&pd.notnull(df_raw.import_tsd_m3)]
@@ -50,12 +50,13 @@ def get_gas_data(file):
     df['country'] = reduce(add, [l+[''] if len(l)==0 else l for l in countries_found])
     df['station'] = df['station'].str.replace(r"\(.*\)", "")
     df = df[['date', 'station', 'country', 'import_tsd_m3']]
-    df_total = df[df['station'].str.contains('сього')].drop(['station', 'country'], axis = 1)
-    df_comp = df[~df['station'].str.contains('сього')]
+    df_total = df[df['station'].str.contains('otal')].drop(['station', 'country'], axis = 1)
+    df_comp = df[~df['station'].str.contains('otal')]
+    df_comp = df_comp[~df_comp['station'].str.contains('station')]
     return (df_total, df_comp)
 
 # joining files into a list
-files = os.listdir('inflow_eu_ua_raw')
+files = os.listdir(dir_raw)
 all_dfs = list(map(get_gas_data, files))
 
 # creating and processing full datasets: daily data and totals
