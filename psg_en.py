@@ -11,10 +11,10 @@ from time import sleep
 pd.options.mode.chained_assignment = None
 
 # constants
-url = 'http://utg.ua/wp-content/uploads/cdd/ARCHIVE/UGS/EN/'
+url = 'https://tsoua.com/wp-content/uploads/data/cdd/ARCHIVE/UGS/EN/'
 dir_raw = 'psg_raw_en'
 link_pattern = 'AllUGS_'
-rar_file = 'AllUGS_UTG_en.rar'
+rar_file = 'AllUGS_UTG_en-2019.rar'
 title_str = 'psg_en'
 
 # Download files

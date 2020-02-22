@@ -13,10 +13,10 @@ from bs4 import BeautifulSoup
 from time import sleep
 pd.options.mode.chained_assignment = None
 
-url = 'http://utg.ua/wp-content/uploads/cdd/ARCHIVE/INFLOW_EU/UA/'
+url = 'https://tsoua.com/wp-content/uploads/data/cdd/ARCHIVE/INFLOW_EU/UA/'
 dir_raw = 'inflow_eu_ua_raw'
 start_pattern = 'Inflow'
-rar_file = 'Inflow_eu_ua.rar'
+rar_file = 'Inflow_eu_ua-2019.rar'
 title_str = 'utg_inflow_eu'
 
 # Download files

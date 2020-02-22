@@ -25,13 +25,13 @@ print('Inflow from Russia EN')
 import inflow_ru_ua_en
 print('Inflow from Russia EN completed')
 
-print('GMS UA')
-import gvs
-print('GMS UA completed')
+# print('GMS UA')
+# import gvs
+# print('GMS UA completed')
 
-print('GMS EN')
-import gvs_en
-print('GMS EN completed')
+# print('GMS EN')
+# import gvs_en
+# print('GMS EN completed')
 
 print('UGS UA')
 import psg

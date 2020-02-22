@@ -14,10 +14,10 @@ from time import sleep
 pd.options.mode.chained_assignment = None
 
 # constants for downloading
-url = 'http://utg.ua/wp-content/uploads/cdd/ARCHIVE/INFLOW/UA/'
+url = 'https://tsoua.com/wp-content/uploads/data/cdd/ARCHIVE/INFLOW/UA/'
 dir_raw = 'inflow_ru_ua_raw'
 start_pattern = 'Inflow'
-rar_file = 'Inflow_ua.rar'
+rar_file = 'Inflow_ua-2019.rar'
 
 # constants for data processing
 title_str = 'utg_inflow_ru'

@@ -11,10 +11,10 @@ from bs4 import BeautifulSoup
 from time import sleep
 pd.options.mode.chained_assignment = None
 
-url = 'http://utg.ua/wp-content/uploads/cdd/ARCHIVE/PROD/UA/'
+url = 'https://tsoua.com/wp-content/uploads/data/cdd/ARCHIVE/PROD/UA/'
 dir_raw = 'prod_ua_raw'
 link_pattern = 'rod_'
-rar_file = 'prod_ua.rar'
+rar_file = 'prod_ua-2019.rar'
 title_str = 'utg_prod_ua'
 
 # Download files
