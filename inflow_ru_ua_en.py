@@ -27,8 +27,8 @@ countries_dict = {"Uzhgorod": "Slovakia",
                   "Orlovka": "Romania",
                   "Tekovo": "Romania",
                   "Moldova": "Moldova"}
-dir_dict = {"Flow total": "in", "Inflow total": "in", "Transit total": "out"}
-col_dict = {"Flow total": "inflow", "Inflow total": "inflow", "Transit total": "transit"}
+dir_dict = {"Flow total": "in", "Inflow total": "in", "Transit total": "out", "Entry points": "in", "Exit points": "out"}
+col_dict = {"Flow total": "inflow", "Inflow total": "inflow", "Transit total": "transit", "Entry points": "inflow", "Exit points": "transit", "Total": "transit"}
 
 # Download files
 content = BeautifulSoup(requests.get(url).text)
@@ -51,7 +51,7 @@ def get_gas_data(file):
     print(file)
     df_raw = pd.read_excel(os.path.join(dir_raw, file)).iloc[1:,1:3]
     df_raw.columns = ['station', 'volume_tsd_m3']
-    title = [item for item in df_raw['station'] if pd.notna(item)][0].replace('Russian gas inflow and transit ', '')
+    title = [item for item in df_raw['station'] if pd.notna(item)][0].replace('Russian gas inflow and transit ', '').replace('Entry and exit points as of ', '').replace('Exit points ', '')
     df = df_raw.loc[pd.notnull(df_raw.station)&pd.notnull(df_raw.volume_tsd_m3)]
     df['date'] = title
     df['date'] = pd.to_datetime(df['date'], format = '%d.%m.%Y', exact = True)
@@ -62,12 +62,19 @@ def get_gas_data(file):
     df['temp'] = df['station'].str.extract(r'([A-Z][a-z]+)')
     df['country_out'] = df['temp'].map(countries_dict)
     df['country'][df['country']==''] = df['country_out'][df['country']=='']
-    df['station'] = df['station'].str.replace(r' \([A-Z][a-z]{2,}\)', '').str.strip()
-    df['direction'] = df['station'].str.strip().map(dir_dict).ffill()
-    df.loc[df['station'].str.contains('OBA|ОВА|Gazprom|Russian gas'), 'direction'] = ''
+    df['station'] = df['station'].str.strip().str.replace(r' \([A-Z][a-z]{2,}\)', '')
+    df['direction'] = df['station'].map(dir_dict).ffill()
+    if df['direction'].isnull().all():
+        if 'Exit points' in [item for item in df_raw['station'] if pd.notna(item)][0]:
+            df['direction'] = 'out'
+    df.loc[df['station'].str.contains('OBA|ОВА|OBA|Gazprom|Russian gas'), 'direction'] = ''
     df['volume_tsd_m3'][df['direction']=='out'] = 0-df['volume_tsd_m3'][df['direction']=='out'] 
-    df_total = df[df['station'].str.contains('Flow total|Inflow total|Transit total|Gazprom|Russian gas|OBA|ОВА')]
+    df_total = df[df['station'].str.contains('Flow total|Inflow total|Transit total|Gazprom|Russian gas|OBA|ОВА|Entry|Exit')]
+    if df_total.shape[0]==0:
+        df_total = df[df['station'] == 'Total']
+#    df_total = df_total[df_total['direction']!='']    
     df_comp = df[~df['station'].str.contains('Flow total|Inflow total|Transit total|Gazprom|Russian gas|OBA|ОВА')]
+    df_comp = df_comp[df_comp['station']!='Total']
     df_comp = df_comp[['date', 'direction', 'station', 'country', 'volume_tsd_m3']]
     df_total = df_total[['date', 'station', 'volume_tsd_m3']]
     return (df_total, df_comp)
@@ -84,6 +91,7 @@ all_dfs_total['temp'] = all_dfs_total['station'].map(col_dict)
 all_dfs_total.loc[pd.isnull(all_dfs_total['temp']), 'temp'] = "balance_official"
 all_dfs_total = all_dfs_total.pivot(index = 'date', columns = 'temp', values = 'volume_tsd_m3')
 all_dfs_total.reset_index(inplace = True)
+all_dfs_total['inflow'][all_dfs_total['inflow'].isnull()] = 0
 all_dfs_total['change_calculated'] = all_dfs_total['inflow']+all_dfs_total['transit']
 all_dfs_total = all_dfs_total[['date', 'inflow', 'transit', 'change_calculated', 'balance_official']]
 
@@ -105,4 +113,4 @@ grouped_sums = all_dfs_comp.groupby(['date', 'direction'])['volume_tsd_m3'].agg(
 total_to_compare = pd.melt(all_dfs_total.iloc[:,:3], id_vars = 'date', var_name = 'direction', value_name = 'volume_tsd_m3')
 total_to_compare['direction'] = total_to_compare['direction'].map({'inflow': 'in', 'transit': 'out'})
 compare_sums = pd.merge(grouped_sums, total_to_compare, on = ['date', 'direction'], how = 'outer').sort_values(['date', 'direction'])
-compare_sums.to_excel(os.path.join('output', title_str+'compare_sums.xlsx'), encoding = 'utf-8', index = False)
+compare_sums.to_excel(os.path.join('output', title_str+'_compare_sums.xlsx'), encoding = 'utf-8', index = False)
