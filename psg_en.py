@@ -15,6 +15,7 @@ url = 'https://tsoua.com/wp-content/uploads/data/cdd/ARCHIVE/UGS/EN/'
 dir_raw = 'psg_raw_en'
 link_pattern = 'AllUGS_'
 rar_file = 'AllUGS_UTG_en-2019.rar'
+rar_file2 = 'AllUGS_UTG_en.rar'
 title_str = 'psg_en'
 
 # Download files
@@ -31,6 +32,9 @@ for file in files:
 rar_content_names = RarFile(os.path.join(dir_raw, rar_file)).namelist()
 RarFile(os.path.join(dir_raw, rar_file)).extractall(dir_raw)
 os.remove(os.path.join(dir_raw, rar_file))
+rar_content_names = RarFile(os.path.join(dir_raw, rar_file2)).namelist()
+RarFile(os.path.join(dir_raw, rar_file2)).extractall(dir_raw)
+os.remove(os.path.join(dir_raw, rar_file2))
 
 # Функція отримання даних про видобуток газу з одного файлу (за один день)
 
